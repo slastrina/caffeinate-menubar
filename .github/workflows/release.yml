@@ -72,10 +72,14 @@ jobs:
           plutil -lint build/CaffeinateMenubar.app/Contents/Info.plist
           lipo -info build/CaffeinateMenubar.app/Contents/MacOS/CaffeinateMenubar || true
 
-      - name: Zip and checksum
+      - name: Archive with ditto (preserves bundle metadata)
         run: |
           cd build
-          zip -ry CaffeinateMenubar.zip CaffeinateMenubar.app
+          # ditto is Apple's recommended tool for archiving .app bundles —
+          # preserves extended attributes, code signatures, and resource forks.
+          # zip -ry strips some of those, which can present as "damaged" on
+          # download.
+          ditto -c -k --sequesterRsrc --keepParent CaffeinateMenubar.app CaffeinateMenubar.zip
           shasum -a 256 CaffeinateMenubar.zip > CaffeinateMenubar.zip.sha256
           ls -lh CaffeinateMenubar.zip CaffeinateMenubar.zip.sha256
 
@@ -93,7 +97,23 @@ jobs:
 
             1. Download `CaffeinateMenubar.zip` below.
             2. Unzip and drag `CaffeinateMenubar.app` into `/Applications`.
-            3. **First launch:** the app is unsigned, so right-click → **Open** → **Open** in the dialog. (One-time step.)
+            3. **Remove the Gatekeeper quarantine flag.** This release isn't notarized, so macOS would otherwise refuse to open it ("damaged" message). One Terminal command:
+
+               ```
+               xattr -dr com.apple.quarantine /Applications/CaffeinateMenubar.app
+               ```
+
+               After that the app launches normally on every double-click.
             4. Look for the cup-and-saucer icon in your menubar — click it to start a session.
 
-            Requires **macOS 13 (Ventura)** or later. Apple Silicon only in this release; Intel users can build from source.
+            ### Alternative (no Terminal)
+
+            Try to open the app, get the "damaged" warning, then go to **System Settings → Privacy & Security**, scroll to the bottom, and click **Open Anyway** next to the CaffeinateMenubar entry. macOS may ask once more — confirm.
+
+            ### Requirements
+
+            macOS 13 (Ventura) or later. Apple Silicon only in this release; Intel users can build from source via `swift build -c release`.
+
+            ### Why all this manual stuff
+
+            Proper signing + notarization (which would remove the quarantine friction entirely) requires a paid Apple Developer ID. That's planned as a follow-up. For now, the app is ad-hoc signed — enough for the binary to be valid on Apple Silicon, but not enough to satisfy Gatekeeper on a fresh download.

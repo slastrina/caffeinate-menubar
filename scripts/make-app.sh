@@ -38,6 +38,14 @@ mkdir -p "${APP_PATH}/Contents/Resources"
 cp "$BIN_PATH" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 
+# Icon
+if [ -f "Resources/AppIcon.icns" ]; then
+    cp "Resources/AppIcon.icns" "${APP_PATH}/Contents/Resources/AppIcon.icns"
+    echo "==> Bundled AppIcon.icns"
+else
+    echo "WARN: Resources/AppIcon.icns not found — app will use the generic icon" >&2
+fi
+
 cat > "${APP_PATH}/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -47,6 +55,10 @@ cat > "${APP_PATH}/Contents/Info.plist" <<EOF
     <string>en</string>
     <key>CFBundleExecutable</key>
     <string>${APP_NAME}</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>${BUNDLE_ID}</string>
     <key>CFBundleInfoDictionaryVersion</key>
@@ -72,6 +84,14 @@ cat > "${APP_PATH}/Contents/Info.plist" <<EOF
 </dict>
 </plist>
 EOF
+
+# Ad-hoc sign so the binary is valid per Apple's "arm64 binaries must be signed"
+# rule. This does NOT make Gatekeeper trust the app (would need a paid Developer
+# ID Application certificate + notarization) — it just makes the binary loadable
+# once the quarantine attribute is removed.
+echo "==> Ad-hoc codesigning"
+codesign --force --deep --sign - --timestamp=none "${APP_PATH}"
+codesign --verify --verbose "${APP_PATH}" 2>&1 | tail -3 || true
 
 echo "==> Built ${APP_PATH} (version ${VERSION})"
 ls -lh "${APP_PATH}/Contents/MacOS/${APP_NAME}"
