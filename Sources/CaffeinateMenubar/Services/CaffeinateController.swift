@@ -64,7 +64,11 @@ final class CaffeinateController: ObservableObject {
     }
 }
 
-private final class RealCaffeinateProcess: CaffeinateProcess {
+// The underlying Process is only created and driven from the @MainActor
+// CaffeinateController, so concurrent access is gated by that isolation —
+// hence @unchecked Sendable for the Process.terminationHandler @Sendable
+// closure capture.
+private final class RealCaffeinateProcess: CaffeinateProcess, @unchecked Sendable {
     let arguments: [String]
     var terminationHandler: ((CaffeinateProcess) -> Void)?
 

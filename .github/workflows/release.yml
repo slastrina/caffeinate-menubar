@@ -23,6 +23,14 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
+      - name: Select latest Xcode (need Swift 6+ for swift-testing)
+        run: |
+          LATEST=$(ls -1d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$LATEST" ]; then
+            echo "Selecting $LATEST"
+            sudo xcode-select -s "$LATEST/Contents/Developer"
+          fi
+
       - name: Show toolchain
         run: |
           sw_vers

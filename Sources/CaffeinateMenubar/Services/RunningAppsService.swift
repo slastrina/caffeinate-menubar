@@ -33,12 +33,10 @@ final class RunningAppsService: ObservableObject {
         })
     }
 
-    deinit {
-        let center = NSWorkspace.shared.notificationCenter
-        for observer in observers {
-            center.removeObserver(observer)
-        }
-    }
+    // The service is an app-lifetime singleton (SharedServices), so explicit
+    // observer cleanup in deinit is unnecessary — the observers are released
+    // with the process. Skipping the deinit also avoids a Swift 6 nonisolated-
+    // deinit error on the non-Sendable [any NSObjectProtocol] array.
 
     func refresh() {
         let running = NSWorkspace.shared.runningApplications
