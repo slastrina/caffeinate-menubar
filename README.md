@@ -118,18 +118,3 @@ The unit tests use Swift's modern `Testing` framework and cover:
   when the underlying process exits on its own
 - The `CaffeinateProcess` protocol seam means tests don't actually spawn
   `/usr/bin/caffeinate` — see `Tests/CaffeinateMenubarTests/CaffeinateControllerTests.swift`
-
-### Cutting a release
-
-```bash
-git tag v0.2.0
-git push origin v0.2.0
-```
-
-That triggers `.github/workflows/release.yml`, which builds a universal
-binary, packages `CaffeinateMenubar.app`, zips it, and attaches it to a
-GitHub Release.
-
-## License
-
-TBD.
