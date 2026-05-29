@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v0.1.0). Must already exist as a git tag.'
+        required: true
+
+permissions:
+  contents: write  # needed to create the GitHub Release
+
+jobs:
+  build:
+    name: Build & release
+    runs-on: macos-14
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          VERSION="${TAG#v}"
+          echo "tag=$TAG"     >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Tag: $TAG (version: $VERSION)"
+
+      - name: Run tests
+        run: swift test
+
+      - name: Build universal release binary
+        run: swift build -c release --arch arm64 --arch x86_64
+
+      - name: Package .app bundle
+        run: |
+          BIN_DIR=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
+          export BIN_PATH="${BIN_DIR}/CaffeinateMenubar"
+          ./scripts/make-app.sh "${{ steps.version.outputs.version }}"
+
+      - name: Verify bundle
+        run: |
+          file build/CaffeinateMenubar.app/Contents/MacOS/CaffeinateMenubar
+          plutil -lint build/CaffeinateMenubar.app/Contents/Info.plist
+          lipo -info build/CaffeinateMenubar.app/Contents/MacOS/CaffeinateMenubar || true
+
+      - name: Zip and checksum
+        run: |
+          cd build
+          zip -ry CaffeinateMenubar.zip CaffeinateMenubar.app
+          shasum -a 256 CaffeinateMenubar.zip > CaffeinateMenubar.zip.sha256
+          ls -lh CaffeinateMenubar.zip CaffeinateMenubar.zip.sha256
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            build/CaffeinateMenubar.zip
+            build/CaffeinateMenubar.zip.sha256
+          body: |
+            ## Install
+
+            1. Download `CaffeinateMenubar.zip` below.
+            2. Unzip and drag `CaffeinateMenubar.app` into `/Applications`.
+            3. **First launch:** the app is unsigned, so right-click → **Open** → **Open** in the dialog. (One-time step.)
+            4. Look for the cup-and-saucer icon in your menubar — click it to start a session.
+
+            Requires **macOS 13 (Ventura)** or later. Universal binary (Apple Silicon + Intel).
