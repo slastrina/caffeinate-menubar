@@ -5,7 +5,8 @@ with a configurable flag picker, timed sessions, and the option to keep your
 Mac awake only while a specific app is running.
 
 Built with Swift + SwiftUI (`MenuBarExtra`). Requires **macOS 13 (Ventura)** or
-later.
+later. v0.1.0 releases ship **Apple Silicon only**; Intel Macs can build from
+source via `swift build`. A universal binary is planned for a follow-up.
 
 [![Latest release](https://img.shields.io/github/v/release/slastrina/caffeinate-menubar?label=download)](https://github.com/slastrina/caffeinate-menubar/releases/latest)
 [![Build](https://github.com/slastrina/caffeinate-menubar/actions/workflows/release.yml/badge.svg)](https://github.com/slastrina/caffeinate-menubar/actions/workflows/release.yml)

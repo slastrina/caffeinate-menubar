@@ -53,12 +53,16 @@ jobs:
       - name: Run tests
         run: swift test
 
-      - name: Build universal release binary
-        run: swift build -c release --arch arm64 --arch x86_64
+      # arm64-only for v0.1.0. SPM's universal build (--arch arm64 --arch
+      # x86_64) currently misencodes .swiftLanguageMode(.v5) when it routes
+      # through xcodebuild. Revisit universal once that's fixed or once we
+      # adopt Swift 6 language mode end-to-end.
+      - name: Build release binary (arm64)
+        run: swift build -c release --arch arm64
 
       - name: Package .app bundle
         run: |
-          BIN_DIR=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
+          BIN_DIR=$(swift build -c release --arch arm64 --show-bin-path)
           export BIN_PATH="${BIN_DIR}/CaffeinateMenubar"
           ./scripts/make-app.sh "${{ steps.version.outputs.version }}"
 
@@ -92,4 +96,4 @@ jobs:
             3. **First launch:** the app is unsigned, so right-click → **Open** → **Open** in the dialog. (One-time step.)
             4. Look for the cup-and-saucer icon in your menubar — click it to start a session.
 
-            Requires **macOS 13 (Ventura)** or later. Universal binary (Apple Silicon + Intel).
+            Requires **macOS 13 (Ventura)** or later. Apple Silicon only in this release; Intel users can build from source.
