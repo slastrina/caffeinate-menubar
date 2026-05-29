@@ -23,13 +23,13 @@ final class RunningAppsService: ObservableObject {
             forName: NSWorkspace.didLaunchApplicationNotification,
             object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
+            Task { @MainActor [weak self] in self?.refresh() }
         })
         observers.append(center.addObserver(
             forName: NSWorkspace.didTerminateApplicationNotification,
             object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
+            Task { @MainActor [weak self] in self?.refresh() }
         })
     }
 
