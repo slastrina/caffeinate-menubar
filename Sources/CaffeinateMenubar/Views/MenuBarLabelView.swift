@@ -6,6 +6,11 @@ struct MenuBarLabelView: View {
     @State private var now = Date()
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
+    /// Tint everything red once the session has fewer than this many seconds
+    /// left, giving the user peripheral awareness without needing to open the
+    /// dropdown.
+    private static let urgencyWindow: Int = 5 * 60
+
     var body: some View {
         // Single, type-stable HStack so MenuBarExtra doesn't pre-allocate a
         // hidden slot from a @ViewBuilder conditional. Text("") collapses to
@@ -16,16 +21,26 @@ struct MenuBarLabelView: View {
             Text(countdownText)
                 .monospacedDigit()
         }
+        .foregroundStyle(isNearingEnd ? Color.red : Color.primary)
         .onReceive(timer) { now = $0 }
     }
 
     private var countdownText: String {
+        guard let remaining = remainingSeconds else { return "" }
+        return Self.compactRemaining(seconds: remaining)
+    }
+
+    private var isNearingEnd: Bool {
+        guard let remaining = remainingSeconds else { return false }
+        return remaining > 0 && remaining <= Self.urgencyWindow
+    }
+
+    private var remainingSeconds: Int? {
         guard case .running(let config, let startedAt) = state,
               let duration = config.durationSeconds else {
-            return ""
+            return nil
         }
-        let remaining = max(0, duration - Int(now.timeIntervalSince(startedAt)))
-        return Self.compactRemaining(seconds: remaining)
+        return max(0, duration - Int(now.timeIntervalSince(startedAt)))
     }
 
     /// Glanceable countdown for the menubar — minute-resolution above 1m,
