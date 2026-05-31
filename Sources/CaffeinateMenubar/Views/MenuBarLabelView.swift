@@ -7,8 +7,7 @@ struct MenuBarLabelView: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     /// Tint everything red once the session has fewer than this many seconds
-    /// left, giving the user peripheral awareness without needing to open the
-    /// dropdown.
+    /// left, giving peripheral awareness without needing to open the dropdown.
     private static let urgencyWindow: Int = 5 * 60
 
     var body: some View {
@@ -18,10 +17,12 @@ struct MenuBarLabelView: View {
         // populates the Text with the countdown.
         HStack(spacing: countdownText.isEmpty ? 0 : 4) {
             Image(systemName: state.isRunning ? "cup.and.saucer.fill" : "cup.and.saucer")
+                .symbolRenderingMode(isNearingEnd ? .palette : .monochrome)
+                .foregroundStyle(isNearingEnd ? Color.red : Color.primary)
             Text(countdownText)
                 .monospacedDigit()
+                .foregroundStyle(isNearingEnd ? Color.red : Color.primary)
         }
-        .foregroundStyle(isNearingEnd ? Color.red : Color.primary)
         .onReceive(timer) { now = $0 }
     }
 
