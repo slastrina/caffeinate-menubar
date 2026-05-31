@@ -130,4 +130,36 @@ struct CaffeinateControllerTests {
         #expect(recorder.spawned[1].arguments == ["-d"])
         #expect(controller.state.runningConfig?.flags == .preventDisplaySleep)
     }
+
+    @Test("Natural termination publishes didEndSessionNaturally")
+    func naturalEndPublishes() async throws {
+        let recorder = ProcessRecorder()
+        let controller = CaffeinateController(processFactory: recorder.makeFactory())
+        let config = SessionConfig(flags: .preventIdleSleep, durationSeconds: 1)
+
+        var received: [SessionConfig] = []
+        let cancellable = controller.didEndSessionNaturally.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        try controller.start(config)
+        recorder.spawned[0].simulateExit()
+        await Task.yield()
+
+        #expect(received == [config])
+    }
+
+    @Test("Manual stop does not publish didEndSessionNaturally")
+    func manualStopDoesNotPublish() throws {
+        let recorder = ProcessRecorder()
+        let controller = CaffeinateController(processFactory: recorder.makeFactory())
+
+        var received: [SessionConfig] = []
+        let cancellable = controller.didEndSessionNaturally.sink { received.append($0) }
+        defer { cancellable.cancel() }
+
+        try controller.start(SessionConfig(flags: .preventIdleSleep, durationSeconds: 60))
+        controller.stop()
+
+        #expect(received.isEmpty)
+    }
 }

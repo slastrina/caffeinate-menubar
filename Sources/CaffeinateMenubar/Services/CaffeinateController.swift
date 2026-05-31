@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import os
 
 protocol CaffeinateProcess: AnyObject {
@@ -17,6 +18,12 @@ enum CaffeinateError: Error, Equatable {
 @MainActor
 final class CaffeinateController: ObservableObject {
     @Published private(set) var state: SessionState = .idle
+
+    /// Emits the config of any session that ended on its own (caffeinate
+    /// exited because its `-t` timer expired). Manual stops via `stop()` do
+    /// not publish here, so subscribers can fire "session finished"
+    /// notifications without false positives for user-initiated cancels.
+    let didEndSessionNaturally = PassthroughSubject<SessionConfig, Never>()
 
     private let processFactory: CaffeinateProcessFactory
     private var process: CaffeinateProcess?
@@ -59,8 +66,12 @@ final class CaffeinateController: ObservableObject {
     private func handleTermination(of terminated: CaffeinateProcess) {
         guard process === terminated else { return }
         logger.info("caffeinate exited; returning to idle")
+        let endedConfig = state.runningConfig
         process = nil
         state = .idle
+        if let endedConfig {
+            didEndSessionNaturally.send(endedConfig)
+        }
     }
 }
 

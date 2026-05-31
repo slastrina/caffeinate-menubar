@@ -1,17 +1,32 @@
 import SwiftUI
 import AppKit
+import Combine
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var sessionEndCancellable: AnyCancellable?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        SharedServices.shared.notifications.requestAuthorizationIfNeeded()
+        sessionEndCancellable = SharedServices.shared.controller
+            .didEndSessionNaturally
+            .sink { config in
+                MainActor.assumeIsolated {
+                    let args = config.flags.arguments.joined(separator: " ")
+                    SharedServices.shared.notifications.notifySessionEnded(args: args)
+                }
+            }
     }
 
-    func applicationWillTerminate(_ notification: Notification) {
+    nonisolated func applicationWillTerminate(_ notification: Notification) {
         // Best-effort stop of any running caffeinate. The controller is
         // @MainActor-isolated, so reach it through the shared instance held by
         // the SwiftUI scene; if it has already torn down, the OS will reap the
         // child process when our PID exits.
-        SharedServices.shared.controller.stop()
+        MainActor.assumeIsolated {
+            SharedServices.shared.controller.stop()
+        }
     }
 }
 
@@ -22,6 +37,7 @@ final class SharedServices {
     let runningApps = RunningAppsService()
     let launchAtLogin = LaunchAtLoginService()
     let updateChecker = UpdateCheckerService()
+    let notifications = NotificationService()
     private init() {}
 }
 
