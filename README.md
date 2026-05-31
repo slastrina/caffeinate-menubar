@@ -20,24 +20,10 @@ source via `swift build`. A universal binary is planned for a follow-up.
 2. Unzip it. You'll get `CaffeinateMenubar.app`.
 3. Drag it into `/Applications`. (Required if you want "Launch at login" to
    work reliably.)
-4. **Remove the Gatekeeper quarantine flag.** The release isn't notarized, so
-   macOS 14.4+ refuses to open downloaded copies with a misleading "damaged"
-   warning. One Terminal command fixes it for good:
+4. Double-click to launch. The cup-and-saucer icon appears in your menubar.
 
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/CaffeinateMenubar.app
-   ```
-
-   After that, double-clicking the app works normally on every launch.
-5. The cup-and-saucer icon appears in your menubar. Click it to start a
-   session.
-
-> If you'd rather avoid the Terminal: try to open the app, accept the warning,
-> then go to **System Settings → Privacy & Security**, scroll to the bottom,
-> and click **Open Anyway**. macOS may ask for confirmation once more.
->
-> Proper signing + notarization (which removes this whole step) requires a
-> paid Apple Developer ID. Planned as a follow-up release.
+Releases are signed with a Developer ID certificate and notarized by Apple,
+so Gatekeeper opens them with no warnings.
 
 ## Features
 

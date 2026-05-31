@@ -85,13 +85,36 @@ cat > "${APP_PATH}/Contents/Info.plist" <<EOF
 </plist>
 EOF
 
-# Ad-hoc sign so the binary is valid per Apple's "arm64 binaries must be signed"
-# rule. This does NOT make Gatekeeper trust the app (would need a paid Developer
-# ID Application certificate + notarization) — it just makes the binary loadable
-# once the quarantine attribute is removed.
-echo "==> Ad-hoc codesigning"
-codesign --force --deep --sign - --timestamp=none "${APP_PATH}"
-codesign --verify --verbose "${APP_PATH}" 2>&1 | tail -3 || true
+# Sign the bundle. Two modes:
+#
+#   1. DEVELOPER_ID_SIGNING_IDENTITY set → sign with the user's Developer ID
+#      Application certificate, hardened runtime, secure timestamp, and the
+#      project's entitlements plist. This is the configuration notarytool
+#      requires. Used by CI; locally only if the user opts in.
+#
+#   2. Otherwise → ad-hoc sign (current dev default). Enough to make the binary
+#      valid on Apple Silicon but won't satisfy Gatekeeper on a fresh download
+#      and cannot be notarized.
+ENTITLEMENTS_PATH="CaffeinateMenubar.entitlements"
+
+if [ -n "${DEVELOPER_ID_SIGNING_IDENTITY:-}" ]; then
+    echo "==> Codesigning with Developer ID: ${DEVELOPER_ID_SIGNING_IDENTITY}"
+    if [ ! -f "$ENTITLEMENTS_PATH" ]; then
+        echo "ERROR: entitlements file not found at $ENTITLEMENTS_PATH" >&2
+        exit 1
+    fi
+    codesign --force \
+        --sign "$DEVELOPER_ID_SIGNING_IDENTITY" \
+        --options runtime \
+        --timestamp \
+        --entitlements "$ENTITLEMENTS_PATH" \
+        "${APP_PATH}"
+    codesign --verify --strict --verbose=2 "${APP_PATH}" 2>&1 | tail -5 || true
+else
+    echo "==> Ad-hoc codesigning (set DEVELOPER_ID_SIGNING_IDENTITY for a Gatekeeper-trusted build)"
+    codesign --force --sign - --timestamp=none "${APP_PATH}"
+    codesign --verify --verbose "${APP_PATH}" 2>&1 | tail -3 || true
+fi
 
 echo "==> Built ${APP_PATH} (version ${VERSION})"
 ls -lh "${APP_PATH}/Contents/MacOS/${APP_NAME}"
