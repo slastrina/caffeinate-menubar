@@ -45,9 +45,7 @@ struct CaffeinateMenubarApp: App {
                 .environmentObject(launchAtLogin)
                 .environmentObject(updateChecker)
         } label: {
-            Image(systemName: controller.state.isRunning
-                  ? "cup.and.saucer.fill"
-                  : "cup.and.saucer")
+            MenuBarLabelView(state: controller.state)
         }
         .menuBarExtraStyle(.window)
     }
