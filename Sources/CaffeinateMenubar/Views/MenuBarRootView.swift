@@ -43,9 +43,15 @@ struct MenuBarRootView: View {
                 updateBanner(for: update)
             }
 
-            Button("Quit") { NSApp.terminate(nil) }
-                .keyboardShortcut("q")
-                .buttonStyle(.borderless)
+            HStack {
+                Button("Quit") { NSApp.terminate(nil) }
+                    .keyboardShortcut("q")
+                    .buttonStyle(.borderless)
+                Spacer()
+                Text(Self.versionLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(14)
         .frame(width: 280)
@@ -132,6 +138,12 @@ struct MenuBarRootView: View {
                     .foregroundStyle(.red)
             }
         }
+    }
+
+    private static var versionLabel: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        guard let v = version, !v.isEmpty, v != "0.0.0" else { return "dev" }
+        return "v\(v)"
     }
 
     private func updateBanner(for update: AvailableUpdate) -> some View {
