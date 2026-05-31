@@ -7,20 +7,25 @@ struct MenuBarLabelView: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        if case .running(let config, let startedAt) = state,
-           let duration = config.durationSeconds {
-            let remaining = max(0, duration - Int(now.timeIntervalSince(startedAt)))
-            // Text-only countdown while a timed session is active. MenuBarExtra's
-            // label closure reliably renders Text *or* Image alone, but every
-            // combination we tried (Label, HStack, Text+Image interpolation)
-            // dropped one side or the other. The cup icon returns the moment
-            // the session ends or switches to indefinite.
-            Text(Self.compactRemaining(seconds: remaining))
-                .monospacedDigit()
-                .onReceive(timer) { now = $0 }
-        } else {
+        // Single, type-stable HStack so MenuBarExtra doesn't pre-allocate a
+        // hidden slot from a @ViewBuilder conditional. Text("") collapses to
+        // zero width when idle, giving us just the icon; running-with-timer
+        // populates the Text with the countdown.
+        HStack(spacing: countdownText.isEmpty ? 0 : 4) {
             Image(systemName: state.isRunning ? "cup.and.saucer.fill" : "cup.and.saucer")
+            Text(countdownText)
+                .monospacedDigit()
         }
+        .onReceive(timer) { now = $0 }
+    }
+
+    private var countdownText: String {
+        guard case .running(let config, let startedAt) = state,
+              let duration = config.durationSeconds else {
+            return ""
+        }
+        let remaining = max(0, duration - Int(now.timeIntervalSince(startedAt)))
+        return Self.compactRemaining(seconds: remaining)
     }
 
     /// Glanceable countdown for the menubar — minute-resolution above 1m,
