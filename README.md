@@ -19,6 +19,15 @@ source via `swift build`. A universal binary is planned for a follow-up.
 
 ## Install
 
+### Homebrew (recommended)
+
+```bash
+brew tap slastrina/tap
+brew install --cask caffeinatemenubar
+```
+
+### Manual
+
 1. Grab the latest `CaffeinateMenubar.zip` from
    [**Releases**](https://github.com/slastrina/caffeinate-menubar/releases/latest).
 2. Unzip it. You'll get `CaffeinateMenubar.app`.

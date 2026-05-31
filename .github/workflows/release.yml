@@ -156,6 +156,15 @@ jobs:
           body: |
             ## Install
 
+            ### Homebrew
+
+            ```
+            brew tap slastrina/tap
+            brew install --cask caffeinatemenubar
+            ```
+
+            ### Manual
+
             1. Download `CaffeinateMenubar.zip` below.
             2. Unzip and drag `CaffeinateMenubar.app` into `/Applications`.
             3. Double-click to launch. Look for the cup-and-saucer icon in your menubar.
@@ -165,3 +174,53 @@ jobs:
             ### Requirements
 
             macOS 13 (Ventura) or later. Apple Silicon only in this release; Intel users can build from source via `swift build -c release`.
+
+      - name: Update Homebrew tap
+        env:
+          HOMEBREW_TAP_PAT: ${{ secrets.HOMEBREW_TAP_PAT }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ -z "$HOMEBREW_TAP_PAT" ]; then
+            echo "HOMEBREW_TAP_PAT not set — skipping tap update."
+            echo "(Set the secret + create the slastrina/homebrew-tap repo to enable this step.)"
+            exit 0
+          fi
+
+          SHA=$(shasum -a 256 build/CaffeinateMenubar.zip | awk '{print $1}')
+          TAP_DIR="$RUNNER_TEMP/homebrew-tap"
+
+          git clone --depth 1 \
+            "https://x-access-token:${HOMEBREW_TAP_PAT}@github.com/slastrina/homebrew-tap.git" \
+            "$TAP_DIR"
+
+          mkdir -p "$TAP_DIR/Casks"
+          cat > "$TAP_DIR/Casks/caffeinatemenubar.rb" <<EOF
+          cask "caffeinatemenubar" do
+            version "${VERSION}"
+            sha256 "${SHA}"
+
+            url "https://github.com/slastrina/caffeinate-menubar/releases/download/v#{version}/CaffeinateMenubar.zip"
+            name "CaffeinateMenubar"
+            desc "Menubar app that wraps the macOS caffeinate command"
+            homepage "https://github.com/slastrina/caffeinate-menubar"
+
+            depends_on macos: ">= :ventura"
+
+            app "CaffeinateMenubar.app"
+
+            zap trash: [
+              "~/Library/Preferences/com.samuellastrina.caffeinatemenubar.plist",
+            ]
+          end
+          EOF
+
+          cd "$TAP_DIR"
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add Casks/caffeinatemenubar.rb
+          if git diff --staged --quiet; then
+            echo "Cask already at ${VERSION} — nothing to commit."
+            exit 0
+          fi
+          git commit -m "Bump caffeinatemenubar to ${VERSION}"
+          git push
