@@ -5,6 +5,7 @@ struct MenuBarRootView: View {
     @EnvironmentObject var controller: CaffeinateController
     @EnvironmentObject var runningApps: RunningAppsService
     @EnvironmentObject var launchAtLogin: LaunchAtLoginService
+    @EnvironmentObject var updateChecker: UpdateCheckerService
 
     @AppStorage("flags.rawValue") private var flagsRawValue: Int = CaffeinateFlags.preventIdleSleep.rawValue
     @AppStorage("duration.option") private var durationOption: DurationOption = .indefinite
@@ -37,6 +38,10 @@ struct MenuBarRootView: View {
 
             Divider()
             launchAtLoginRow
+
+            if let update = updateChecker.availableUpdate {
+                updateBanner(for: update)
+            }
 
             Button("Quit") { NSApp.terminate(nil) }
                 .keyboardShortcut("q")
@@ -127,6 +132,20 @@ struct MenuBarRootView: View {
                     .foregroundStyle(.red)
             }
         }
+    }
+
+    private func updateBanner(for update: AvailableUpdate) -> some View {
+        Button {
+            NSWorkspace.shared.open(update.releasePageURL)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.down.circle")
+                Text("Update available — v\(update.version)")
+                    .font(.caption)
+            }
+            .foregroundStyle(Color.accentColor)
+        }
+        .buttonStyle(.borderless)
     }
 
     private func startSession() {

@@ -21,6 +21,7 @@ final class SharedServices {
     let controller = CaffeinateController()
     let runningApps = RunningAppsService()
     let launchAtLogin = LaunchAtLoginService()
+    let updateChecker = UpdateCheckerService()
     private init() {}
 }
 
@@ -30,6 +31,11 @@ struct CaffeinateMenubarApp: App {
     @StateObject private var controller = SharedServices.shared.controller
     @StateObject private var runningApps = SharedServices.shared.runningApps
     @StateObject private var launchAtLogin = SharedServices.shared.launchAtLogin
+    @StateObject private var updateChecker = SharedServices.shared.updateChecker
+
+    init() {
+        SharedServices.shared.updateChecker.start()
+    }
 
     var body: some Scene {
         MenuBarExtra {
@@ -37,6 +43,7 @@ struct CaffeinateMenubarApp: App {
                 .environmentObject(controller)
                 .environmentObject(runningApps)
                 .environmentObject(launchAtLogin)
+                .environmentObject(updateChecker)
         } label: {
             Image(systemName: controller.state.isRunning
                   ? "cup.and.saucer.fill"
