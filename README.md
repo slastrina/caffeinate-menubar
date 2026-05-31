@@ -11,6 +11,10 @@ source via `swift build`. A universal binary is planned for a follow-up.
 [![Latest release](https://img.shields.io/github/v/release/slastrina/caffeinate-menubar?label=download)](https://github.com/slastrina/caffeinate-menubar/releases/latest)
 [![Build](https://github.com/slastrina/caffeinate-menubar/actions/workflows/release.yml/badge.svg)](https://github.com/slastrina/caffeinate-menubar/actions/workflows/release.yml)
 
+<p align="center">
+  <img src="docs/menubar-dropdown.png" alt="CaffeinateMenubar dropdown showing flag toggles, duration picker, and app-tied session controls" width="360">
+</p>
+
 ---
 
 ## Install
