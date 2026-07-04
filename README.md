@@ -23,6 +23,7 @@ source via `swift build`. A universal binary is planned for a follow-up.
 
 ```bash
 brew tap slastrina/tap
+brew trust slastrina/tap
 brew install --cask caffeinatemenubar
 ```
 
